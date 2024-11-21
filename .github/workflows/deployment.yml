@@ -1,0 +1,24 @@
+name: Deploy model on Docker Hub
+
+on:
+  push:
+    branches:
+      - 'release'
+
+jobs:
+  build-image:
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_HUB_URI: energydrink9/stem_continuation_dataset_generator
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Build and push Docker image
+      env:
+        IMAGE_NAME: $DOCKER_HUB_URI
+      run: |
+        echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | docker login --username energydrink9 --password-stdin
+        docker build -t "${{ env.IMAGE_NAME }}:${{ github.sha }}" -t "${{ env.IMAGE_NAME }}:latest" -f Dockerfile.serve .
+        docker push ${{ env.IMAGE_NAME }} --all-tags
