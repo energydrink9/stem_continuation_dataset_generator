@@ -1,7 +1,7 @@
 ![example workflow](https://github.com/energydrink9/stem_continuation_dataset_generator/actions/workflows/python-app.yml/badge.svg)
 
 
-This repository can be used to create audio datasets for the generation of music stems that are a continuation of an input music audio file.
+This repository can be used to create audio datasets for the generation of stem continuations of music audio files. The code uses [Dask](https://www.dask.org/) in order to scale the dataset processing on a cluster of virtual machines in the cloud. The application is configured to run on AWS EC2 and to use S3 as storage.
 
 ### Initial setup
 
