@@ -9,7 +9,7 @@ import multiprocessing
 
 from stem_continuation_dataset_generator.utils.constants import get_random_seed
 
-BUCKET_NAME = 'soundstripe-dataset'
+BUCKET_NAME = 'stem-continuation-dataset'
 PROTOCOL = 's3://'
 BUCKET = f'{PROTOCOL}{BUCKET_NAME}'
 SOURCE_FILES_DIR = 'encoded'

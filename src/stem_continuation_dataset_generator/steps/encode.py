@@ -7,7 +7,7 @@ from s3fs.core import S3FileSystem
 from stem_continuation_dataset_generator.codec import encode_file
 from stem_continuation_dataset_generator.utils.device import get_device
 
-BUCKET_NAME = 'soundstripe-dataset'
+BUCKET_NAME = 'stem-continuation-dataset'
 PROTOCOL = 's3://'
 BUCKET = f'{PROTOCOL}{BUCKET_NAME}'
 SOURCE_FILES_DIR = 'distorted'

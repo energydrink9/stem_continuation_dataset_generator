@@ -12,8 +12,8 @@ from stem_continuation_dataset_generator.cluster import get_client
 from stem_continuation_dataset_generator.constants import STEM_NAME
 from stem_continuation_dataset_generator.utils.constants import get_random_seed
 
-SOURCE_FILES_PATH = 's3://soundstripe-dataset-original/original'
-OUTPUT_FILES_DIR = 's3://soundstripe-dataset-original/merged'
+SOURCE_FILES_PATH = 's3://stem-continuation-dataset-original/original'
+OUTPUT_FILES_DIR = 's3://stem-continuation-dataset-original/merged'
 STEM_NAMES = ['guitar', 'drums', 'bass', 'perc', 'fx', 'vocals', 'piano', 'synth', 'winds', 'strings']
 BASIC_STEM_NAMES = ['guitar', 'drums', 'bass', 'perc', 'gtr', 'drm']
 MAX_RANDOM_FULL_ASSORTMENTS_PER_SONG = 3

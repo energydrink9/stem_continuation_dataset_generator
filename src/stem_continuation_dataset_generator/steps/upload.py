@@ -9,7 +9,7 @@ import multiprocessing.pool
 from stem_continuation_dataset_generator.constants import CLEARML_DATASET_TRAINING_VERSION, DATASET_TAGS
 from stem_continuation_dataset_generator.utils.utils import upload_dataset
 
-BUCKET_NAME = 'soundstripe-dataset'
+BUCKET_NAME = 'stem-continuation-dataset'
 PROTOCOL = 's3://'
 BUCKET = f'{PROTOCOL}{BUCKET_NAME}'
 SOURCE_FILES_DIRS = ['split/train', 'split/validation', 'split/test']

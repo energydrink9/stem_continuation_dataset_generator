@@ -5,7 +5,7 @@ import dask.config
 from dask.distributed import Client, LocalCluster
 
 NUM_WORKERS = [4, 50]
-BUCKET = 's3://soundstripe-dataset'
+BUCKET = 's3://stem-continuation-dataset'
 
 
 def get_client(

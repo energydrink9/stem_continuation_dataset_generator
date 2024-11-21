@@ -13,7 +13,7 @@ from s3fs.core import S3FileSystem
 from stem_continuation_dataset_generator.cluster import get_client
 from stem_continuation_dataset_generator.utils.utils import clamp_audio_data, convert_audio_to_int_16
 
-BUCKET = 's3://soundstripe-dataset'
+BUCKET = 's3://stem-continuation-dataset'
 SOURCE_FILES_DIR = '/merged'
 OUTPUT_FILES_DIR = '/augmented'
 AUGMENTATIONS_COUNT = 3
