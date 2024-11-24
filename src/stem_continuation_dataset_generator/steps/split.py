@@ -7,13 +7,14 @@ from tqdm import tqdm
 from multiprocessing.pool import Pool 
 import multiprocessing
 
+from stem_continuation_dataset_generator.constants import STEM_NAME
 from stem_continuation_dataset_generator.utils.constants import get_random_seed
 
 BUCKET_NAME = 'stem-continuation-dataset'
 PROTOCOL = 's3://'
 BUCKET = f'{PROTOCOL}{BUCKET_NAME}'
-SOURCE_FILES_DIR = 'encoded'
-OUTPUT_FILES_DIR = 'split'
+SOURCE_FILES_DIR = f'{STEM_NAME}/encoded'
+OUTPUT_FILES_DIR = f'{STEM_NAME}/split'
 SPLIT_NAMES = ['train', 'validation', 'test']
 VALIDATION_SIZE = 0.08
 TEST_SIZE = 0.06

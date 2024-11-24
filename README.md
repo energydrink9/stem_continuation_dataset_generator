@@ -34,6 +34,13 @@ Also this one in case you are running on Apple Silicon:
 export PYTORCH_ENABLE_MPS_FALLBACK=1
 ```
 
+### Install
+
+```sh
+poetry install
+```
+
+
 ### Dataset generation
 
 Source directory should contain a folder for each artist. The artist folders should contain one compressed file for each song. The compressed file should contain one .wav file for each stem. In order to identify the different stems, the stem files should have names containing the values present at `src/stem_continuation_dataset_generator/steps/merge.py` in the `STEM_NAMES` variable.

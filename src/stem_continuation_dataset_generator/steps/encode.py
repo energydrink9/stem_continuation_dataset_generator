@@ -5,13 +5,14 @@ from typing import List, Tuple, cast
 from s3fs.core import S3FileSystem
 
 from stem_continuation_dataset_generator.codec import encode_file
+from stem_continuation_dataset_generator.constants import STEM_NAME
 from stem_continuation_dataset_generator.utils.device import get_device
 
 BUCKET_NAME = 'stem-continuation-dataset'
 PROTOCOL = 's3://'
 BUCKET = f'{PROTOCOL}{BUCKET_NAME}'
-SOURCE_FILES_DIR = 'distorted'
-OUTPUT_FILES_DIR = 'encoded'
+SOURCE_FILES_DIR = f'{STEM_NAME}/distorted'
+OUTPUT_FILES_DIR = f'{STEM_NAME}/encoded'
 
 # Set this flag to True to run locally (i.e. not on Coiled)
 RUN_LOCALLY = True

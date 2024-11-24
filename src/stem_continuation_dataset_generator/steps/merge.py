@@ -12,20 +12,23 @@ from stem_continuation_dataset_generator.cluster import get_client
 from stem_continuation_dataset_generator.constants import STEM_NAME
 from stem_continuation_dataset_generator.utils.constants import get_random_seed
 
-SOURCE_FILES_PATH = 's3://stem-continuation-dataset-original/original'
-OUTPUT_FILES_DIR = 's3://stem-continuation-dataset-original/merged'
-STEM_NAMES = ['guitar', 'drums', 'bass', 'perc', 'fx', 'vocals', 'piano', 'synth', 'winds', 'strings']
-BASIC_STEM_NAMES = ['guitar', 'drums', 'bass', 'perc', 'gtr', 'drm']
-MAX_RANDOM_FULL_ASSORTMENTS_PER_SONG = 3
+SOURCE_FILES_PATH = 's3://stem-continuation-dataset/original'
+OUTPUT_FILES_DIR = f's3://stem-continuation-dataset/{STEM_NAME}/merged'
+STEM_NAMES = ['guitar', 'drum', 'bass', 'perc', 'fx', 'vocals', 'piano', 'synth', 'winds', 'strings']
+BASIC_STEM_NAMES = ['guitar', 'drum', 'bass', 'perc', 'gtr', 'drm', 'piano']
+EXCLUDE_STEMS = ['fx', 'synth', 'winds', 'strings']
+INCLUDE_ALL_STEMS_ASSORTMENT = False
 MAX_BASIC_STEM_RANDOM_ASSORTMENTS_PER_SONG = 4
+MAX_RANDOM_FULL_ASSORTMENTS_PER_SONG = 4
 MIN_PERCENTAGE_OF_AUDIO_IN_NON_SILENT_FILES = 0.5
+MAX_STEMS_IN_ASSORTMENT = 3
 
 # Set this flag to True to run locally (i.e. not on Coiled)
 RUN_LOCALLY = False
 
 ADDITIONAL_STEM_NAMES = {
     'guitar': ['guitars', 'gtr'],
-    'drums': ['drum', 'drm'],
+    'drum': ['drum', 'drm'],
     'piano': ['keys'],
     'vocals': ['vocal', 'vox'],
 }
@@ -93,9 +96,10 @@ def create_stems_assortments(other_stems: List[StemFile], current_stem_file: str
     assortments: Set[FrozenSet[str]] = set()
 
     # 1. all stems assortment
-    other_stems_files = get_stem_files_paths(other_stems)
-    all_stems_assortment = other_stems_files
-    assortments.add(all_stems_assortment)
+    if INCLUDE_ALL_STEMS_ASSORTMENT is True:
+        other_stems_files = get_stem_files_paths(other_stems)
+        all_stems_assortment = other_stems_files
+        assortments.add(all_stems_assortment)
 
     if len(non_silent_basic_stems_paths) > 0:
 
@@ -118,12 +122,12 @@ def create_stems_assortments(other_stems: List[StemFile], current_stem_file: str
                 full_assortment_paths: Set[str] = set()
                 for _ in range(number_of_basic_stems):
                     random_basic_stem = get_random_stem(non_silent_basic_stems_paths)
-                    if random_basic_stem is not None:
+                    if random_basic_stem is not None and len(full_assortment_paths) < MAX_STEMS_IN_ASSORTMENT:
                         full_assortment_paths.add(random_basic_stem)
 
                 for _ in range(number_of_non_basic_stems):
                     random_non_basic_stem = get_random_stem(non_basic_stem_paths)
-                    if random_non_basic_stem is not None:
+                    if random_non_basic_stem is not None and len(full_assortment_paths) < MAX_STEMS_IN_ASSORTMENT:
                         full_assortment_paths.add(random_non_basic_stem)
 
                 assortments.add(frozenset(full_assortment_paths))
