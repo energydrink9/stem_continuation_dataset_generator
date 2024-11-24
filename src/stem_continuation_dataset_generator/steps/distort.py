@@ -11,6 +11,7 @@ from dask.distributed import Client
 from distributed import progress
 
 from stem_continuation_dataset_generator.cluster import get_client
+from stem_continuation_dataset_generator.constants import STEM_NAME
 from stem_continuation_dataset_generator.utils.utils import clamp_audio_data, convert_audio_to_float_32, convert_audio_to_int_16
 
 BUCKET_NAME = 'stem-continuation-dataset'
@@ -111,7 +112,6 @@ def distort_all(source_directory: str, output_directory: str):
     client = cast(Client, get_client(
         RUN_LOCALLY,
         n_workers=[1, 10],
-        mount_bucket=None
     ))
     
     print('Distorting audio tracks')

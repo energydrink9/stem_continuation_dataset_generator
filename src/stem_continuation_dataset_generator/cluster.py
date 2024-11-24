@@ -22,16 +22,11 @@ def get_client(
     else:
         cluster = coiled.Cluster(
             n_workers=n_workers,
-            package_sync_conda_extras=['ffmpeg'],
+            package_sync_conda_extras=['portaudio', 'ffmpeg'],
             idle_timeout="5 minutes",
             **kwargs,
         )
 
     client = cluster.get_client()
 
-    if kwargs['mount_bucket'] is not None:
-        mount_point = '../dataset' if run_locally else os.path.join('/mount', kwargs['mount_bucket'].replace('s3://', ''))
-        return client, mount_point
-    
-    else:
-        return client
+    return client

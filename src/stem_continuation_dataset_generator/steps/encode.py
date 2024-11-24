@@ -62,7 +62,6 @@ def encode_all(source_directory: str, output_directory: str):
     #     worker_vm_types=['c6a.xlarge'],
     #     # worker_vm_types=['g5.xlarge'],
     #     scheduler_vm_types=['t3a.medium'],
-    #     mount_bucket=None,
     #     # spot_policy='spot',
     #     use_best_zone=True,
     # ))

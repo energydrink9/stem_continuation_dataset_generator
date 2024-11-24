@@ -200,7 +200,7 @@ def assort_directory(params: Tuple[S3FileSystem, str, str, str, str]) -> None:
             stem, stems_to_merge = assortment
             if not fs.exists(song_directory):
                 fs.makedirs(song_directory, exist_ok=True)
-
+            
             output_path = os.path.join(song_directory, "all.ogg")
             if not fs.exists(output_path):
                 merge_stems(fs, list(stems_to_merge) + [stem], output_file=output_path)
@@ -216,12 +216,11 @@ def assort_and_merge_all(source_directory: str, output_directory: str, stem_name
     fs = S3FileSystem()
 
     dirs = get_directories_containing_ogg_files(fs, source_directory)
-    
+
     params_list: List[Tuple[S3FileSystem, str, str, str, str]] = [(fs, source_directory, output_directory, directory, stem_name) for directory in dirs]
-    
+
     print('Assorting and merging audio tracks')
-    futures = progress(client.map(assort_directory, params_list))
-    client.gather(futures)
+    progress(client.map(assort_directory, params_list))
 
     return output_directory
 
