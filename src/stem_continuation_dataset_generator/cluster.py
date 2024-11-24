@@ -1,4 +1,3 @@
-import os
 from typing import List, Tuple, Union
 import coiled
 import dask.config

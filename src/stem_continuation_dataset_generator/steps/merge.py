@@ -87,7 +87,7 @@ def get_stem_files_paths(stems: List[StemFile]) -> FrozenSet[str]:
     return frozenset({stem.file_path for stem in stems})
 
 
-def create_stems_assortments(other_stems: List[StemFile], current_stem_file: str) -> List[Tuple[str, FrozenSet[str]]]:
+def create_stems_assortments(other_stems: List[StemFile], current_stem_file: str) -> List[Tuple[str, FrozenSet[str]]]:  # noqa: C901
     other_stems_paths = get_stem_files_paths(other_stems)
     non_silent_stems_paths = get_stem_files_paths([stem for stem in other_stems if not stem.is_mostly_silent])
     non_silent_basic_stems_paths = get_basic_stems(non_silent_stems_paths, BASIC_STEM_NAMES)

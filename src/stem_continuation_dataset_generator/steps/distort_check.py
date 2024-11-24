@@ -2,7 +2,6 @@
 import fsspec.implementations.local
 from stem_continuation_dataset_generator.steps.distort import distort_file
 
-
 TEST_FILE_PATH_ALL = 'resources/all.ogg'
 
 

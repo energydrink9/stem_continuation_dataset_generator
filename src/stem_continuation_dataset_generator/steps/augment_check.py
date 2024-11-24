@@ -1,6 +1,5 @@
-
+import fsspec.implementations.local
 from stem_continuation_dataset_generator.steps.augment import augment_pitch_and_tempo
-
 
 TEST_FILE_PATH_ALL = 'resources/all.ogg'
 TEST_FILE_PATH_STEM = 'resources/stem.ogg'
@@ -8,8 +7,9 @@ TEST_FILE_PATH_STEM = 'resources/stem.ogg'
 
 def check_augment_pitch_and_tempo() -> None:
     
-    augment_pitch_and_tempo([(TEST_FILE_PATH_ALL, f'{TEST_FILE_PATH_ALL}-augmented.ogg')])
-    augment_pitch_and_tempo([(TEST_FILE_PATH_STEM, f'{TEST_FILE_PATH_STEM}-augmented.ogg')])
+    fs = fsspec.implementations.local.LocalFileSystem()
+    augment_pitch_and_tempo(fs, [(TEST_FILE_PATH_ALL, f'{TEST_FILE_PATH_ALL}-augmented.ogg')])
+    augment_pitch_and_tempo(fs, [(TEST_FILE_PATH_STEM, f'{TEST_FILE_PATH_STEM}-augmented.ogg')])
 
     print('Augmented files generated successfully')
 
