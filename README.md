@@ -1,7 +1,7 @@
 ![example workflow](https://github.com/energydrink9/stem_continuation_dataset_generator/actions/workflows/python-app.yml/badge.svg)
 
 
-This application implements a pipeline that can be used to create audio datasets for the generation of stem continuations of music audio files. The code uses [Dask](https://www.dask.org/) in order to scale the dataset processing on a cluster of virtual machines in the cloud. The application is configured to run on AWS EC2 and to use S3 as storage. The audio files are encoded using Meta's [Encodec](https://github.com/facebookresearch/encodec) into a discrete, compressed, tokenized representation.
+This application implements a pipeline that can be used to create audio datasets for the generation of stem continuations of music audio files. The code uses [Dask](https://www.dask.org/) in order to scale the dataset processing on a cluster of virtual machines in the cloud. The application is configured to run on AWS EC2 and to use S3 as storage. The audio files are encoded using Meta's [Encodec](https://github.com/facebookresearch/encodec) into a discrete, compressed, tokenized representation. Finally, the last step uploads the dataset to [ClearML](https://clear.ml) to be used for training and/or inference.
 
 The dataset generation pipeline is comprised of several steps:
 - **Uncompress**. The application expects to find the stem files for a single music file (in .wav format) in a compressed zip archive. Each stem should have a predefined name in order to be identified as a guitar, bass, drum, etc.
@@ -10,6 +10,7 @@ The dataset generation pipeline is comprised of several steps:
 - **Augment**. Audio augmentations are used to increase the dataset size, by changing pitch and tempo.
 - **Distort**. Several audio distortions are applied to simulate real conditions.
 - **Encode**. The audio files are encoded using **Encodec** and chunked.
+- **Upload**. (Optional) Upload the dataset to ClearML.
 
 ### Initial setup
 
@@ -22,14 +23,14 @@ poetry install
 
 #### Environment Variables
 
-If you want to run training or dataset generation (for inference it's not needed), make sure the following environment variables are set before running the application (replace the <> tokens with the actual secrets):
+In case you'd like to upload the dataset to ClearML, make sure the following environment variables are set before running the upload step (replace the <> tokens with the actual secrets):
 
 ```sh
 export CLEARML_API_ACCESS_KEY=<YOUR_CLEARML_API_ACCESS_KEY_HERE>
 export CLEARML_API_SECRET_KEY=<YOUR_CLEARML_API_SECRET_KEY_HERE>
 ```
 
-Also this one in case you are running on Apple Silicon:
+When running the encode step locally on Apple Silicon, you will also need to set the following environment variable:
 ```sh
 export PYTORCH_ENABLE_MPS_FALLBACK=1
 ```
