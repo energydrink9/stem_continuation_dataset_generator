@@ -6,17 +6,20 @@ from tqdm import tqdm
 import multiprocessing
 import multiprocessing.pool
 
-from stem_continuation_dataset_generator.constants import CLEARML_DATASET_TRAINING_VERSION, DATASET_TAGS, STEM_NAME
+from stem_continuation_dataset_generator.constants import CLEARML_DATASET_TRAINING_VERSION, DATASET_TAGS, get_split_files_path
 from stem_continuation_dataset_generator.utils.utils import upload_dataset
 
-BUCKET_NAME = 'stem-continuation-dataset'
-PROTOCOL = 's3://'
-BUCKET = f'{PROTOCOL}{BUCKET_NAME}'
-SOURCE_FILES_DIRS = [f'{STEM_NAME}/split/train', f'{STEM_NAME}/split/validation', f'{STEM_NAME}/split/test']
+
+def get_input_dirs(split_files_path: str) -> List[str]:
+    return [
+        os.path.join(split_files_path, 'train'),
+        os.path.join(split_files_path, 'validation'),
+        os.path.join(split_files_path, 'test'),
+    ]
 
 
 def get_files(fs: S3FileSystem, dir: str) -> List[str]:
-    return [PROTOCOL + path for path in cast(List[str], fs.glob(os.path.join(dir, '**/*.pkl')))]
+    return [path for path in cast(List[str], fs.glob(os.path.join(dir, '**/*.pkl')))]
 
 
 def download_file(params: Tuple[S3FileSystem, str, str, str]):
@@ -40,18 +43,19 @@ def download_file(params: Tuple[S3FileSystem, str, str, str]):
                     print(e3)
 
 
-def upload(input_dirs: List[str], tags: List[str]):
+def upload(split_files_path: str, tags: List[str]):
+    
     fs = S3FileSystem(use_listings_cache=False)
+    input_dirs = get_input_dirs(split_files_path)
 
     for split_dir in input_dirs:
-        source_directory = os.path.join(BUCKET, split_dir)
-        set = os.path.split(source_directory)[1]
+        set = os.path.split(split_dir)[1]
         
         with tempfile.TemporaryDirectory() as local_directory:
-            print(f'Downloading {set} dataset (folder {source_directory}) from S3 into {local_directory}')
+            print(f'Downloading {set} dataset (folder {split_dir}) from S3 into {local_directory}')
             
-            files = get_files(fs, source_directory)
-            inputs = [(fs, file, source_directory, local_directory) for file in files]
+            files = get_files(fs, split_dir)
+            inputs = [(fs, file, split_dir, local_directory) for file in files]
 
             with multiprocessing.pool.ThreadPool(multiprocessing.cpu_count()) as pool:
                 list(tqdm(pool.imap(download_file, inputs), total=len(inputs)))
@@ -61,4 +65,4 @@ def upload(input_dirs: List[str], tags: List[str]):
 
 
 if __name__ == '__main__':
-    upload(SOURCE_FILES_DIRS, DATASET_TAGS)
+    upload(get_split_files_path(), DATASET_TAGS)

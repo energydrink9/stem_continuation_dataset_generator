@@ -11,21 +11,16 @@ from dask.distributed import Client
 from distributed import progress
 
 from stem_continuation_dataset_generator.cluster import get_client
-from stem_continuation_dataset_generator.constants import STEM_NAME
+from stem_continuation_dataset_generator.constants import get_augmented_files_path, get_distorted_files_path
 from stem_continuation_dataset_generator.utils.utils import clamp_audio_data, convert_audio_to_float_32, convert_audio_to_int_16
 
-BUCKET_NAME = 'stem-continuation-dataset'
-PROTOCOL = 's3://'
-BUCKET = f'{PROTOCOL}{BUCKET_NAME}'
-SOURCE_FILES_DIR = f'{STEM_NAME}/augmented'
-OUTPUT_FILES_DIR = f'{STEM_NAME}distorted'
 
 # Set this flag to True to run locally (i.e. not on Coiled)
 RUN_LOCALLY = False
 
 
 def get_full_track_files(fs: S3FileSystem, dir: str) -> List[str]:
-    return [PROTOCOL + path for path in cast(List[str], fs.glob(os.path.join(dir, '**/all.ogg')))]
+    return [path for path in cast(List[str], fs.glob(os.path.join(dir, '**/all.ogg')))]
 
 
 def get_stem_file(dir: str):
@@ -105,9 +100,9 @@ def distort(params: Tuple[S3FileSystem, Tuple[str, str], str, str]) -> None:
 
 def distort_all(source_directory: str, output_directory: str):
     fs = S3FileSystem(use_listings_cache=False)
-    files: List[Tuple[str, str]] = get_files_pairs(fs, os.path.join(BUCKET, source_directory))
+    files: List[Tuple[str, str]] = get_files_pairs(fs, source_directory)
     
-    params_list: List[Tuple[S3FileSystem, Tuple[str, str], str, str]] = [(fs, file_pair, os.path.join(BUCKET, source_directory), os.path.join(BUCKET, output_directory)) for file_pair in files]
+    params_list: List[Tuple[S3FileSystem, Tuple[str, str], str, str]] = [(fs, file_pair, source_directory, output_directory) for file_pair in files]
 
     client = cast(Client, get_client(
         RUN_LOCALLY,
@@ -122,4 +117,4 @@ def distort_all(source_directory: str, output_directory: str):
 
 
 if __name__ == '__main__':
-    distort_all(SOURCE_FILES_DIR, OUTPUT_FILES_DIR)
+    distort_all(get_augmented_files_path(), get_distorted_files_path())
