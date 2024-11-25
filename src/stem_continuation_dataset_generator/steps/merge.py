@@ -9,11 +9,9 @@ from dask.distributed import progress, Client
 from s3fs.core import S3FileSystem
 
 from stem_continuation_dataset_generator.cluster import get_client
-from stem_continuation_dataset_generator.constants import STEM_NAME
+from stem_continuation_dataset_generator.constants import DEFAULT_STEM_NAME, get_merged_files_path, get_original_files_path
 from stem_continuation_dataset_generator.utils.constants import get_random_seed
 
-SOURCE_FILES_PATH = 's3://stem-continuation-dataset/original'
-OUTPUT_FILES_DIR = f's3://stem-continuation-dataset/{STEM_NAME}/merged'
 STEM_NAMES = ['guitar', 'drum', 'bass', 'perc', 'fx', 'vocals', 'piano', 'synth', 'winds', 'strings']
 BASIC_STEM_NAMES = ['guitar', 'drum', 'bass', 'perc', 'gtr', 'drm', 'piano']
 EXCLUDE_STEMS = ['fx', 'synth', 'winds', 'strings']
@@ -227,4 +225,4 @@ def assort_and_merge_all(source_directory: str, output_directory: str, stem_name
 
 if __name__ == '__main__':
     random.seed(get_random_seed())
-    assort_and_merge_all(SOURCE_FILES_PATH, OUTPUT_FILES_DIR, STEM_NAME)
+    assort_and_merge_all(get_original_files_path(), get_merged_files_path(), DEFAULT_STEM_NAME)

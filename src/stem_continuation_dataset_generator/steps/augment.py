@@ -11,12 +11,9 @@ import soundfile
 from s3fs.core import S3FileSystem
 
 from stem_continuation_dataset_generator.cluster import get_client
-from stem_continuation_dataset_generator.constants import STEM_NAME
+from stem_continuation_dataset_generator.constants import get_augmented_files_path, get_merged_files_path
 from stem_continuation_dataset_generator.utils.utils import clamp_audio_data, convert_audio_to_int_16
 
-BUCKET = 'stem-continuation-dataset'
-SOURCE_FILES_DIR = os.path.join(BUCKET, STEM_NAME, 'merged')
-OUTPUT_FILES_DIR = os.path.join(BUCKET, STEM_NAME, 'augmented')
 AUGMENTATIONS_COUNT = 4
 AUGMENT_PITCH = False
 
@@ -137,4 +134,4 @@ def augment_all(source_directory: str, output_directory: str):
 
 
 if __name__ == '__main__':
-    augment_all(SOURCE_FILES_DIR, OUTPUT_FILES_DIR)
+    augment_all(get_merged_files_path(), get_augmented_files_path())

@@ -57,10 +57,10 @@ The pipeline will uncompress the song archives and convert all the files to OGG 
 
 #### Dataset creation
 
-To process the files obtained at the preparation step, use the following command, replacing the string <PREPARED-DATASET-ID> with the id of the pre-processed dataset obtained from the previous step:
+To process the files obtained at the preparation step, use the following command, replacing the string <STEM_NAME> with the name of the stem (musical instrument) for which you want to generate the dataset (i.e. **guitar** or **drum**):
 
 ```sh
-poetry run python -m stem_continuation_dataset_generator.process <PREPARED-DATASET-ID>
+poetry run python -m stem_continuation_dataset_generator.process <STEM_NAME>
 ```
 
 The pipeline will augment, distort, encode and split the samples into chunks, generating three different folders for the train, validation and test sets. The result will be uploaded to ClearML into 3 different datasets.
