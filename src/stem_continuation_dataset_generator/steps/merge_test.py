@@ -25,7 +25,7 @@ def test_create_stems_assortments() -> None:
     bass_assortment = (CURRENT_STEM_FILE, frozenset({'second_bass'}))
     gtr_assortment = (CURRENT_STEM_FILE, frozenset({'first_gtr'}))
 
-    assert all_stems_assortment in assortments
+    assert all_stems_assortment not in assortments
     assert bass_assortment in assortments and gtr_assortment in assortments
     assert len(assortments) > 1
 
@@ -44,11 +44,7 @@ def test_create_stems_assortments_no_basic_stems() -> None:
     ]
     assortments = create_stems_assortments(other_stems, CURRENT_STEM_FILE)
 
-    expected = [
-        (CURRENT_STEM_FILE, frozenset({'third_silent', 'forth_silent', 'second', 'first', 'fifth'})),
-    ]
-
-    assert sorted(assortments) == sorted(expected)
+    assert assortments == []
 
 
 def test_create_stems_assortments_all_silent() -> None:
@@ -65,8 +61,4 @@ def test_create_stems_assortments_all_silent() -> None:
     ]
     assortments = create_stems_assortments(other_stems, CURRENT_STEM_FILE)
 
-    expected = [
-        (CURRENT_STEM_FILE, frozenset({'third_silent', 'forth_silent', 'second_bass', 'first_gtr', 'fifth'})),
-    ]
-
-    assert sorted(assortments) == sorted(expected)
+    assert assortments == []

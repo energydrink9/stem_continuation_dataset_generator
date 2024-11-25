@@ -2,7 +2,6 @@ from functools import lru_cache
 import math
 from os import PathLike
 import librosa.util
-from stem_continuation_dataset_generator.constants import MAX_SEQ_LEN
 from transformers import EncodecModel, AutoProcessor
 from encodec.utils import convert_audio
 import torchaudio
@@ -11,9 +10,9 @@ from torch import Tensor
 from typing import BinaryIO, List, Optional, Tuple, Union
 
 from stem_continuation_dataset_generator.utils.device import Device
-from stem_continuation_dataset_generator.utils.utils import get_end_of_sequence_token, get_start_of_sequence_token
 
-LIMIT_CHUNKS_LENGTH_TO_MAX_SEQ_LEN = False
+ENCODER_BATCH_SIZE = 32
+ENCODED_TOKENS_PER_CHUNK = 512  # large values (over 1024) require a large amount of memory and can produce OOM errors
 
 
 @lru_cache(maxsize=1)
@@ -29,67 +28,36 @@ def get_processor(device: Device):
     return AutoProcessor.from_pretrained("facebook/encodec_32khz", device_map=device)
 
 
-def encode_file(audio_path: Union[BinaryIO, str, PathLike], device: Device, add_start_and_end_tokens: bool = False, format: Optional[str] = None) -> Tuple[List[Tensor], float]:
+def encode_file(audio_path: Union[BinaryIO, str, PathLike], device: Device, format: Optional[str] = None) -> Tuple[Tensor, float]:
     # Load and pre-process the audio waveform
     wav, sr = torchaudio.load(audio_path, format=format, normalize=False)  # Normalization is later performed using librosa as it seems to work better
-    return encode(wav, sr, device, add_start_and_end_tokens=add_start_and_end_tokens)
+    return encode(wav, sr, device)
 
 
-def get_chunk_length(samples_per_chunk: int, index: int, total_chunks: int, samples_per_token: int, add_start_and_end_tokens: bool) -> int:
-    if add_start_and_end_tokens:
-        if index == 0:
-            if total_chunks == 1:
-                return samples_per_chunk - 2 * samples_per_token
-            else:
-                return samples_per_chunk - 1 * samples_per_token
+def get_total_chunks(samples_per_chunk: int, num_samples: int) -> int:
 
-        if index == total_chunks - 1:
-            return samples_per_chunk - 1 * samples_per_token
-
-    return samples_per_chunk
-
-
-def get_total_chunks(samples_per_chunk: int, num_samples: int, samples_per_token: int, add_start_and_end_tokens: bool) -> int:
-    if add_start_and_end_tokens is True:
-        return math.ceil((num_samples + 2 * samples_per_token) / samples_per_chunk)
     return math.ceil(num_samples / samples_per_chunk)
 
 
-def bundle_chunks_and_add_special_tokens(chunks: List[Tensor], encoded_tokens_per_chunk: int, add_start_and_end_token: bool, device: Device) -> List[Tensor]:
-    if LIMIT_CHUNKS_LENGTH_TO_MAX_SEQ_LEN:
-        max_seq_len = MAX_SEQ_LEN
-        chunks_per_set: int = math.ceil(max_seq_len / encoded_tokens_per_chunk)
-        total_chunks = len(chunks)
-        total_sets = math.ceil(total_chunks / chunks_per_set)
-        chunks_sets = [chunks[i:i + chunks_per_set] for i in range(0, total_chunks, chunks_per_set)]
+def concat_chunks(chunks: List[Tensor], device: Device) -> Tensor:
 
-    else:
-        total_sets = 1
-        chunks_sets = [chunks]
+    sequence = torch.cat(chunks, dim=-1)
 
-    final_chunks = []
-    
-    for i, chunks_set in enumerate(chunks_sets):
-        sequence = torch.cat(chunks_set, dim=-1)
-
-        if add_start_and_end_token:
-            if i == 0:
-                start_of_sequence_token = get_start_of_sequence_token(sequence.shape[-2]).to(device)
-                sequence = torch.cat([start_of_sequence_token, sequence], dim=-1)
-            if i == total_sets - 1:
-                end_of_sequence_token = get_end_of_sequence_token(sequence.shape[-2]).to(device)
-                sequence = torch.cat([sequence, end_of_sequence_token], dim=-1)
-
-        final_chunks.append(sequence)
-
-    return final_chunks
+    return sequence
 
 
 def normalize_audio(audio: Tensor) -> Tensor:
-    return torch.tensor(librosa.util.normalize(audio.numpy()))
+
+    return torch.tensor(librosa.util.normalize(audio.numpy(), axis=1))
 
 
-def encode(audio: Tensor, sr: int, device: Device, add_start_and_end_tokens: bool = False) -> Tuple[List[Tensor], float]:
+def chunk_list(lst, n: int):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
+
+def encode(audio: Tensor, sr: int, device: Device) -> Tuple[Tensor, float]:
 
     device = device if not device.startswith('mps') else 'cpu'  # Encoding is not supported on MPS
     processor = get_processor(device)
@@ -97,42 +65,51 @@ def encode(audio: Tensor, sr: int, device: Device, add_start_and_end_tokens: boo
 
     wav = convert_audio(audio, sr, processor.sampling_rate, codec.config.audio_channels)
     wav = normalize_audio(wav)
+    length_in_seconds = wav.shape[1] / processor.sampling_rate
+    frames_no = math.ceil(length_in_seconds * codec.config.frame_rate)
 
-    # split wav in chunks which length will give encoded chunks of max_seq_len length:
+    # split wav in chunks
     num_samples = wav.shape[1]
-    encoded_tokens_per_chunk = 512  # large values requires a large amount of memory and can cause OOM errors
-    samples_per_token = math.ceil(processor.sampling_rate / codec.config.frame_rate)
-    samples_per_chunk = math.ceil((encoded_tokens_per_chunk / codec.config.frame_rate) * processor.sampling_rate)
-    total_chunks = get_total_chunks(samples_per_chunk, num_samples, samples_per_token, add_start_and_end_tokens)
+    samples_per_chunk = math.ceil((ENCODED_TOKENS_PER_CHUNK / codec.config.frame_rate) * processor.sampling_rate)
+    total_chunks = get_total_chunks(samples_per_chunk, num_samples)
     chunks = []
     start_index = 0
 
-    # create audio chunks
-    for i in range(total_chunks):
-        end_index = start_index + get_chunk_length(samples_per_chunk, i, total_chunks, samples_per_token, add_start_and_end_tokens)
+    # Split into chunks
+    for _ in range(total_chunks):
+        end_index = start_index + samples_per_chunk
         chunk = wav[:, start_index:end_index]
-        chunks.append(chunk)
+        chunks.append(chunk.squeeze(0).numpy())  # Remove the first empty dimension
         start_index = end_index
     
     encoded_chunks = []
 
-    # create encoded chunks from audio chunks
-    for i, chunk in enumerate(chunks):
-        inputs = processor(raw_audio=chunk[0], sampling_rate=processor.sampling_rate, return_tensors="pt")
+    # create audio chunks
+    batches: List[List[Tensor]] = list(chunk_list(chunks, ENCODER_BATCH_SIZE))
+
+    for batch in batches:
+        inputs = processor(raw_audio=batch, sampling_rate=processor.sampling_rate, return_tensors="pt")
         bandwidth = 2.2
         result = codec.encode(inputs["input_values"].to(device), inputs["padding_mask"].to(device), bandwidth=bandwidth)
-        assert result.audio_codes.shape[0] == 1, 'Multiple chunks returned by codec encoding, expected one'        
+        assert result.audio_codes.shape[0] == 1, 'Multiple elements returned by codec encoding, expected one'        
         sequence = result.audio_codes[0]
-        encoded_chunks.append(sequence)
+        
+        # Concatenate the batch items into a single sequence
+        batch_size, codebooks, seq_len = sequence.shape
+        result = sequence.permute(1, 0, 2).reshape(codebooks, seq_len * batch_size)
+        encoded_chunks.append(result)
 
-    encoded_chunks_bundles = bundle_chunks_and_add_special_tokens(encoded_chunks, encoded_tokens_per_chunk, add_start_and_end_tokens, device=device)
+    encoded_audio = concat_chunks(encoded_chunks, device=device)
 
-    return encoded_chunks_bundles, codec.config.frame_rate
+    # Remove padding from the encoded audio
+    encoded_audio = encoded_audio[:, :frames_no]
+    
+    return encoded_audio, codec.config.frame_rate
 
 
 def decode(codes: Tensor, device: Device) -> Tuple[Tensor, int]:
     device = device if not device.startswith('mps') else 'cpu'  # Decoding is not supported on MPS
     codec = get_codec(device)
     decoded_wav = codec.decode(codes.unsqueeze(0).to(device), [None])
-    output_tensor = decoded_wav['audio_values'].squeeze(0)
+    output_tensor = decoded_wav['audio_values'].detach().squeeze(0)
     return output_tensor, codec.config.sampling_rate
