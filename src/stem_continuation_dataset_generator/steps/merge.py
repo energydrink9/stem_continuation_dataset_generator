@@ -218,7 +218,7 @@ def assort_and_merge_all(source_directory: str, output_directory: str, stem_name
     params_list: List[Tuple[S3FileSystem, str, str, str, str]] = [(fs, source_directory, output_directory, directory, stem_name) for directory in dirs]
 
     print('Assorting and merging audio tracks')
-    progress(client.map(assort_directory, params_list))
+    progress(client.map(assort_directory, params_list, retries=2))
 
     return output_directory
 

@@ -1,6 +1,5 @@
 import os
 import pickle
-import traceback
 from typing import List, Tuple, cast
 from distributed import Client, progress
 from s3fs.core import S3FileSystem
@@ -22,26 +21,22 @@ def encode(params: Tuple[S3FileSystem, str, str, str]):
     fs, file_path, source_directory, output_directory = params
     device = get_device()
 
-    try:
-        file_dir = os.path.dirname(file_path)
-        relative_path = os.path.relpath(file_dir, source_directory)
-        file_output_directory = os.path.join(output_directory, relative_path)
-        fs.makedirs(file_output_directory, exist_ok=True)
+    file_dir = os.path.dirname(file_path)
+    relative_path = os.path.relpath(file_dir, source_directory)
+    file_output_directory = os.path.join(output_directory, relative_path)
 
-        output_filename = os.path.basename(file_path)
-        output_file_path = os.path.join(file_output_directory, output_filename)
+    output_filename = os.path.basename(file_path).split('.')[0] + '.pkl'
+    output_file_path = os.path.join(file_output_directory, output_filename)
 
-        if not fs.exists(output_file_path):
-            with fs.open(file_path, 'rb') as file:
-                encoded_audio, frame_rate = encode_file(file, device)                
+    if not fs.exists(output_file_path):
+        with fs.open(file_path, 'rb') as file:
+            encoded_audio, frame_rate = encode_file(file, device, batch_size=2)                
 
-                if not fs.exists(output_file_path):
-                    with fs.open(output_file_path, 'wb') as output_file:
-                        pickle.dump(encoded_audio.detach().to('cpu'), output_file)
-
-    except Exception:
-        print(f'Error while encoding file {file_path}')
-        print(traceback.format_exc())
+            fs.makedirs(file_output_directory, exist_ok=True)
+            with fs.open(output_file_path, 'wb') as output_file:
+                pickle.dump(encoded_audio.detach().to('cpu'), output_file)
+    else:
+        print(f'path {output_file_path} already exists')
     
 
 def encode_all(source_directory: str, output_directory: str):
@@ -53,7 +48,6 @@ def encode_all(source_directory: str, output_directory: str):
     client = cast(Client, get_client(
         RUN_LOCALLY,
         n_workers=[1, 1],
-        # worker_vm_types=['c6a.xlarge'],
         worker_vm_types=['g4dn.xlarge'],
         scheduler_vm_types=['t3.medium'],
         spot_policy='spot',
@@ -66,7 +60,7 @@ def encode_all(source_directory: str, output_directory: str):
     #     print(f'Processing {i} of {len(params_list)} {round(cast(float, i) / len(params_list) * 100)}')
     #     encode(params_list[i])
 
-    futures = client.map(encode, params_list)
+    futures = client.map(encode, params_list, retries=2, batch_size=8)
     progress(futures)
 
     return output_directory

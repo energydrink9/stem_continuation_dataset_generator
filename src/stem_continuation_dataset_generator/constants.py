@@ -5,6 +5,7 @@ CLEARML_DATASET_TRAINING_NAME = 'stem-continuation-dataset'
 CLEARML_DATASET_TRAINING_VERSION = '1.0.0'
 DEFAULT_STEM_NAME = 'drum'
 STORAGE_BUCKET_NAME = 'stem-continuation-dataset'
+DASK_CLUSTER_NAME = 'stem-continuation-dataset-generator-cluster'
 
 
 def get_original_files_path():

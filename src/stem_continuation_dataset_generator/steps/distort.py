@@ -1,6 +1,5 @@
 import io
 import os
-import traceback
 from typing import List, Tuple, cast
 from fsspec import AbstractFileSystem
 import numpy as np
@@ -78,24 +77,19 @@ def distort(params: Tuple[S3FileSystem, Tuple[str, str], str, str]) -> None:
 
     fs, (full_track_file_path, stem_file_path), source_directory, output_directory = params
 
-    try:
-        file_dir = os.path.dirname(full_track_file_path)
-        full_track_relative_path = os.path.relpath(file_dir, source_directory)
-        actual_output_dir = os.path.join(output_directory, full_track_relative_path)
-        fs.makedirs(actual_output_dir, exist_ok=True)
-        full_track_output_file_path = os.path.join(actual_output_dir, os.path.basename(full_track_file_path))
+    file_dir = os.path.dirname(full_track_file_path)
+    full_track_relative_path = os.path.relpath(file_dir, source_directory)
+    actual_output_dir = os.path.join(output_directory, full_track_relative_path)
+    fs.makedirs(actual_output_dir, exist_ok=True)
+    full_track_output_file_path = os.path.join(actual_output_dir, os.path.basename(full_track_file_path))
 
-        if not fs.exists(full_track_output_file_path):
-            distort_file(fs, full_track_file_path, full_track_output_file_path)
+    if not fs.exists(full_track_output_file_path):
+        distort_file(fs, full_track_file_path, full_track_output_file_path)
 
-        stem_relative_path = os.path.relpath(stem_file_path, source_directory)
-        stem_output_file_path = os.path.join(output_directory, stem_relative_path)
-        if not fs.exists(stem_output_file_path):
-            fs.copy(stem_file_path, stem_output_file_path)
-    
-    except Exception as e:
-        print(f'Error processing {full_track_file_path} or {stem_file_path}: {e}')
-        print(traceback.format_exc())
+    stem_relative_path = os.path.relpath(stem_file_path, source_directory)
+    stem_output_file_path = os.path.join(output_directory, stem_relative_path)
+    if not fs.exists(stem_output_file_path):
+        fs.copy(stem_file_path, stem_output_file_path)
 
 
 def distort_all(source_directory: str, output_directory: str):
@@ -110,7 +104,7 @@ def distort_all(source_directory: str, output_directory: str):
     ))
     
     print('Distorting audio tracks')
-    futures = client.map(distort, params_list)
+    futures = client.map(distort, params_list, retries=2)
     progress(futures)
 
     return output_directory
