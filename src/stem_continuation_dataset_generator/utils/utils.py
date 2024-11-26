@@ -1,7 +1,7 @@
 from clearml import Dataset
 import numpy as np
 
-from stem_continuation_dataset_generator.constants import CLEARML_DATASET_TRAINING_NAME
+from stem_continuation_dataset_generator.constants import CLEARML_DATASET_NAME
 from stem_continuation_dataset_generator.utils.constants import get_clearml_project_name
 
 
@@ -10,7 +10,7 @@ def upload_dataset(path: str, version: str, tags: list[str] = [], dataset_set=No
     tags = [f'{dataset_set}-set'] + tags if dataset_set is not None else tags
     dataset = Dataset.create(
         dataset_project=get_clearml_project_name(), 
-        dataset_name=CLEARML_DATASET_TRAINING_NAME,
+        dataset_name=CLEARML_DATASET_NAME,
         dataset_version=version,
         dataset_tags=tags,
     )

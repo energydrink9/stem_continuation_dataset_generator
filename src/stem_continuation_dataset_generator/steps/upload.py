@@ -6,7 +6,7 @@ from tqdm import tqdm
 import multiprocessing
 import multiprocessing.pool
 
-from stem_continuation_dataset_generator.constants import CLEARML_DATASET_TRAINING_VERSION, DATASET_TAGS, get_split_files_path
+from stem_continuation_dataset_generator.constants import CLEARML_DATASET_VERSION, DATASET_TAGS, get_split_files_path
 from stem_continuation_dataset_generator.utils.utils import upload_dataset
 
 
@@ -61,7 +61,7 @@ def upload(split_files_path: str, tags: List[str]):
                 list(tqdm(pool.imap(download_file, inputs), total=len(inputs)))
 
             print(f'Uploading {set} dataset to ClearML')
-            upload_dataset(path=local_directory, version=CLEARML_DATASET_TRAINING_VERSION, tags=tags + ['final'], dataset_set=set)
+            upload_dataset(path=local_directory, version=CLEARML_DATASET_VERSION, tags=tags + ['final'], dataset_set=set)
 
 
 if __name__ == '__main__':

@@ -6,7 +6,6 @@ from dask.distributed import Client, LocalCluster
 from stem_continuation_dataset_generator.constants import DASK_CLUSTER_NAME
 
 NUM_WORKERS = [4, 50]
-BUCKET = 's3://stem-continuation-dataset'
 
 
 def get_client(

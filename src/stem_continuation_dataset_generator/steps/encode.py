@@ -55,10 +55,6 @@ def encode_all(source_directory: str, output_directory: str):
     ))
     
     print('Encoding audio tracks')
-    
-    # for i in range(len(params_list) - 1, 0, -1):
-    #     print(f'Processing {i} of {len(params_list)} {round(cast(float, i) / len(params_list) * 100)}')
-    #     encode(params_list[i])
 
     futures = client.map(encode, params_list, retries=2, batch_size=8)
     progress(futures)
