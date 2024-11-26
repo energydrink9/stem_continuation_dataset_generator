@@ -27,16 +27,14 @@ def encode(params: Tuple[S3FileSystem, str, str, str]):
         relative_path = os.path.relpath(file_dir, source_directory)
         file_output_directory = os.path.join(output_directory, relative_path)
         fs.makedirs(file_output_directory, exist_ok=True)
-        
-        first_chunk_file_name = os.path.basename(file_path).split('.')[0] + '-c0.pkl'
-        first_chunk_file_path = os.path.join(file_output_directory, first_chunk_file_name)
-        
-        if not fs.exists(first_chunk_file_path):
+
+        output_filename = os.path.basename(file_path)
+        output_file_path = os.path.join(file_output_directory, output_filename)
+
+        if not fs.exists(output_file_path):
             with fs.open(file_path, 'rb') as file:
                 encoded_audio, frame_rate = encode_file(file, device)                
 
-                output_filename = os.path.basename(file_path).split('.')[0] + '.pkl'
-                output_file_path = os.path.join(file_output_directory, output_filename)
                 if not fs.exists(output_file_path):
                     with fs.open(output_file_path, 'wb') as output_file:
                         pickle.dump(encoded_audio.detach().to('cpu'), output_file)
