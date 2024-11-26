@@ -1,8 +1,8 @@
 import os
 
 DATASET_TAGS = ['medium']
-CLEARML_DATASET_TRAINING_NAME = 'stem-continuation-dataset'
-CLEARML_DATASET_TRAINING_VERSION = '1.0.0'
+CLEARML_DATASET_NAME = 'stem_continuation_dataset'
+CLEARML_DATASET_VERSION = '1.0.0'
 DEFAULT_STEM_NAME = 'drum'
 STORAGE_BUCKET_NAME = 'stem-continuation-dataset'
 DASK_CLUSTER_NAME = 'stem-continuation-dataset-generator-cluster'
