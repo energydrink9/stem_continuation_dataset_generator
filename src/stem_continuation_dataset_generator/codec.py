@@ -11,7 +11,7 @@ from typing import BinaryIO, List, Optional, Tuple, Union
 
 from stem_continuation_dataset_generator.utils.device import Device
 
-ENCODER_BATCH_SIZE = 32
+ENCODER_BATCH_SIZE = 1
 ENCODED_TOKENS_PER_CHUNK = 512  # large values (over 1024) require a large amount of memory and can produce OOM errors
 
 
@@ -28,10 +28,10 @@ def get_processor(device: Device):
     return AutoProcessor.from_pretrained("facebook/encodec_32khz", device_map=device)
 
 
-def encode_file(audio_path: Union[BinaryIO, str, PathLike], device: Device, format: Optional[str] = None) -> Tuple[Tensor, float]:
+def encode_file(audio_path: Union[BinaryIO, str, PathLike], device: Device, format: Optional[str] = None, batch_size: int = ENCODER_BATCH_SIZE) -> Tuple[Tensor, float]:
     # Load and pre-process the audio waveform
     wav, sr = torchaudio.load(audio_path, format=format, normalize=False)  # Normalization is later performed using librosa as it seems to work better
-    return encode(wav, sr, device)
+    return encode(wav, sr, device, batch_size=batch_size)
 
 
 def get_total_chunks(samples_per_chunk: int, num_samples: int) -> int:
@@ -57,7 +57,7 @@ def chunk_list(lst, n: int):
         yield lst[i:i + n]
 
 
-def encode(audio: Tensor, sr: int, device: Device) -> Tuple[Tensor, float]:
+def encode(audio: Tensor, sr: int, device: Device, batch_size: int = ENCODER_BATCH_SIZE) -> Tuple[Tensor, float]:
 
     device = device if not device.startswith('mps') else 'cpu'  # Encoding is not supported on MPS
     processor = get_processor(device)
@@ -85,7 +85,7 @@ def encode(audio: Tensor, sr: int, device: Device) -> Tuple[Tensor, float]:
     encoded_chunks = []
 
     # create audio chunks
-    batches: List[List[Tensor]] = list(chunk_list(chunks, ENCODER_BATCH_SIZE))
+    batches: List[List[Tensor]] = list(chunk_list(chunks, batch_size))
 
     for batch in batches:
         inputs = processor(raw_audio=batch, sampling_rate=processor.sampling_rate, return_tensors="pt")

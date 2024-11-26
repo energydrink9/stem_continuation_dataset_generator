@@ -1,6 +1,5 @@
 import io
 import os
-import traceback
 from typing import Any, List, Tuple, cast
 from dask.distributed import Client
 from distributed import progress
@@ -69,47 +68,42 @@ def augment(params: Tuple[S3FileSystem, str, str, str]) -> None:
     
     fs, file_path, source_directory, output_directory = params
 
-    try:
-        file_dir = os.path.dirname(file_path)
-        stem_file_path = os.path.join(file_dir, 'stem.ogg')
+    file_dir = os.path.dirname(file_path)
+    stem_file_path = os.path.join(file_dir, 'stem.ogg')
+    file_dir = os.path.dirname(file_path)
+    relative_path = os.path.relpath(file_dir, source_directory)
+    output_file_path = os.path.join(output_directory, relative_path + '-original')
+
+    full_track_output_file_path = os.path.join(output_file_path, os.path.basename(file_path))
+    
+    if not fs.exists(full_track_output_file_path):
+        fs.makedirs(os.path.dirname(full_track_output_file_path), exist_ok=True)
+        if fs.exists(file_path):
+            fs.copy(file_path, full_track_output_file_path)
+
+    stem_output_file_path = os.path.join(output_file_path, os.path.basename(stem_file_path))
+
+    if not fs.exists(stem_output_file_path):
+        fs.makedirs(os.path.dirname(full_track_output_file_path), exist_ok=True)
+        if fs.exists(stem_file_path):
+            fs.copy(stem_file_path, stem_output_file_path)
+
+    for i in range(AUGMENTATIONS_COUNT):
         file_dir = os.path.dirname(file_path)
         relative_path = os.path.relpath(file_dir, source_directory)
-        output_file_path = os.path.join(output_directory, relative_path + '-original')
-
+        output_file_path = os.path.join(output_directory, relative_path + f'-augmented{i}')
         full_track_output_file_path = os.path.join(output_file_path, os.path.basename(file_path))
-        
-        if not fs.exists(full_track_output_file_path):
-            fs.makedirs(os.path.dirname(full_track_output_file_path), exist_ok=True)
-            if fs.exists(file_path):
-                fs.copy(file_path, full_track_output_file_path)
-
         stem_output_file_path = os.path.join(output_file_path, os.path.basename(stem_file_path))
 
-        if not fs.exists(stem_output_file_path):
-            fs.makedirs(os.path.dirname(full_track_output_file_path), exist_ok=True)
-            if fs.exists(stem_file_path):
-                fs.copy(stem_file_path, stem_output_file_path)
-
-        for i in range(AUGMENTATIONS_COUNT):
-            file_dir = os.path.dirname(file_path)
-            relative_path = os.path.relpath(file_dir, source_directory)
-            output_file_path = os.path.join(output_directory, relative_path + f'-augmented{i}')
-            full_track_output_file_path = os.path.join(output_file_path, os.path.basename(file_path))
-            stem_output_file_path = os.path.join(output_file_path, os.path.basename(stem_file_path))
-
-            if not fs.exists(full_track_output_file_path) or not fs.exists(stem_output_file_path):
-                fs.makedirs(output_file_path, exist_ok=True)
-                augment_pitch_and_tempo(
-                    fs,
-                    [
-                        (file_path, full_track_output_file_path),
-                        (stem_file_path, stem_output_file_path)
-                    ]
-                )
-
-    except Exception as e:
-        print(f'Error augmenting file {file_path}: {e}')
-        print(traceback.format_exc())
+        if not fs.exists(full_track_output_file_path) or not fs.exists(stem_output_file_path):
+            fs.makedirs(output_file_path, exist_ok=True)
+            augment_pitch_and_tempo(
+                fs,
+                [
+                    (file_path, full_track_output_file_path),
+                    (stem_file_path, stem_output_file_path)
+                ]
+            )
 
 
 def augment_all(source_directory: str, output_directory: str):
@@ -127,7 +121,7 @@ def augment_all(source_directory: str, output_directory: str):
     params_list: List[Tuple[S3FileSystem, str, str, str]] = [(fs, file_path, source_directory, output_directory) for file_path in files]
 
     print('Augmenting audio tracks')
-    futures = client.map(augment, params_list)
+    futures = client.map(augment, params_list, retries=2)
     progress(futures)
 
     return output_directory

@@ -65,3 +65,23 @@ poetry run python -m stem_continuation_dataset_generator.process <STEM_NAME>
 ```
 
 The pipeline will augment, distort, encode and split the samples into chunks, generating three different folders for the train, validation and test sets. The result will be uploaded to ClearML into 3 different datasets.
+
+### Development
+
+Download the repository and install the package:
+
+```sh
+git clone https://github.com/energydrink9/stem_continuation_dataset_generator.git
+cd stem_continuation_dataset_generator
+poetry install
+```
+
+Once you've downloaded the repository and installed the package, please run the following command to setup the pre-commit hooks:
+```sh
+pre-commit install
+```
+
+Please run the tests before submitting a PR:
+```sh
+pytest
+```
