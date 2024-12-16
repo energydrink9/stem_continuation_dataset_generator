@@ -1,5 +1,8 @@
+import io
 from clearml import Dataset
 import numpy as np
+import librosa
+from typing import Union
 
 from stem_continuation_dataset_generator.constants import CLEARML_DATASET_NAME
 from stem_continuation_dataset_generator.utils.constants import get_clearml_project_name
@@ -40,3 +43,10 @@ def convert_audio_to_float_32(audio_data: np.ndarray) -> np.ndarray:
     raw_data = audio_data / max_32bit
     return raw_data.astype(np.float32)
 
+
+def is_mostly_silent(file: Union[io.TextIOWrapper, io.BufferedReader], percentage_non_silent: float) -> bool:        
+    audio, sr = librosa.load(file)  # type: ignore
+    no_of_samples = audio.shape[-1]
+    splits = librosa.effects.split(audio, top_db=60)
+    non_silent_samples = sum([end - start for (start, end) in splits])
+    return non_silent_samples / no_of_samples < percentage_non_silent

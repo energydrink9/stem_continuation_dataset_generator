@@ -8,6 +8,10 @@ STORAGE_BUCKET_NAME = 'stem-continuation-dataset'
 DASK_CLUSTER_NAME = 'stem-continuation-dataset-generator-cluster'
 
 
+def get_whole_tracks_files_path():
+    return os.path.join(STORAGE_BUCKET_NAME, 'whole-tracks')
+
+
 def get_original_files_path():
     return os.path.join(STORAGE_BUCKET_NAME, 'original')
 

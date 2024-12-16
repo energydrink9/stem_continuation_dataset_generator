@@ -3,7 +3,6 @@ import io
 import os
 import random
 from typing import FrozenSet, List, Optional, Tuple, cast, Set
-import librosa
 from pydub import AudioSegment
 from dask.distributed import progress, Client
 from s3fs.core import S3FileSystem
@@ -11,6 +10,7 @@ from s3fs.core import S3FileSystem
 from stem_continuation_dataset_generator.cluster import get_client
 from stem_continuation_dataset_generator.constants import DEFAULT_STEM_NAME, get_merged_files_path, get_original_files_path
 from stem_continuation_dataset_generator.utils.constants import get_random_seed
+from stem_continuation_dataset_generator.utils.utils import is_mostly_silent
 
 STEM_NAMES = ['guitar', 'drum', 'bass', 'perc', 'fx', 'vocals', 'piano', 'synth', 'winds', 'strings']
 BASIC_STEM_NAMES = ['guitar', 'drum', 'bass', 'perc', 'gtr', 'drm', 'piano']
@@ -133,22 +133,17 @@ def create_stems_assortments(other_stems: List[StemFile], current_stem_file: str
     return [(current_stem_file, assortment) for assortment in assortments]
 
 
-def is_mostly_silent(fs: S3FileSystem, file_path: str) -> bool:
-    with fs.open(file_path, 'rb') as file:
-        
-        audio, sr = librosa.load(file)  # type: ignore
-        no_of_samples = audio.shape[-1]
-        splits = librosa.effects.split(audio, top_db=60)
-        non_silent_samples = sum([end - start for (start, end) in splits])
-        return non_silent_samples / no_of_samples < MIN_PERCENTAGE_OF_AUDIO_IN_NON_SILENT_FILES
-
-
 def get_stem(file_path: str, silent: bool) -> StemFile:
     return StemFile(file_path=file_path, is_mostly_silent=silent)
 
 
+def is_remote_file_mostly_silent(fs: S3FileSystem, file_path: str):
+    with fs.open(file_path, 'rb') as file:
+        return is_mostly_silent(cast(io.TextIOWrapper, file), MIN_PERCENTAGE_OF_AUDIO_IN_NON_SILENT_FILES)
+
+
 def get_stems(fs: S3FileSystem, paths: List[str]) -> List[StemFile]:
-    return [get_stem(path, is_mostly_silent(fs, path)) for path in paths]
+    return [get_stem(path, is_remote_file_mostly_silent(fs, path)) for path in paths]
 
 
 def assort(fs: S3FileSystem, directory: str, stem_name: str) -> List[List[Tuple[str, FrozenSet[str]]]]:
