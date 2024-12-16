@@ -4,6 +4,7 @@
 This application implements a pipeline that can be used to create audio datasets for the generation of stem continuations of music audio files. The code uses [Dask](https://www.dask.org/) in order to scale the dataset processing on a cluster of virtual machines in the cloud. The application is configured to run on AWS EC2 and to use S3 as storage. The audio files are encoded using Meta's [Encodec](https://github.com/facebookresearch/encodec) into a discrete, compressed, tokenized representation. Finally, the last step uploads the dataset to [ClearML](https://clear.ml) to be used for training and/or inference.
 
 The dataset generation pipeline is comprised of several steps:
+- **Stem**. Creates drums, bass, guitar and other stems starting from MP3 files using [Demucs](https://github.com/adefossez/demucs)
 - **Uncompress**. The application expects to find the stem files for a single music file (in .wav format) in a compressed zip archive. Each stem should have a predefined name in order to be identified as a guitar, bass, drum, etc.
 - **Convert to ogg**. Conversion of wav files to the Ogg Opus audio format.
 - **Merge**. Several different assortments of stems are generated.
