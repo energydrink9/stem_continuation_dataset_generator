@@ -56,7 +56,7 @@ def augment_pitch_and_tempo(fs, file_paths: List[Tuple[str, str]]) -> None:
         transforms=[
             PitchShift(p=1 if AUGMENT_PITCH is True else 0, min_semitones=-2, max_semitones=2),
             TimeStretch(p=1, leave_length_unchanged=False),
-            Gain(p=1, min_gain_db=-6, max_gain_db=-5)
+            Gain(p=1, min_gain_db=-4, max_gain_db=4)
         ],
         p=1,
     )
@@ -67,7 +67,6 @@ def augment_pitch_and_tempo(fs, file_paths: List[Tuple[str, str]]) -> None:
 def augment(params: Tuple[S3FileSystem, str, str, str]) -> None:
     
     fs, file_path, source_directory, output_directory = params
-
     file_dir = os.path.dirname(file_path)
     stem_file_path = os.path.join(file_dir, 'stem.ogg')
     file_dir = os.path.dirname(file_path)
@@ -96,6 +95,7 @@ def augment(params: Tuple[S3FileSystem, str, str, str]) -> None:
         stem_output_file_path = os.path.join(output_file_path, os.path.basename(stem_file_path))
 
         if not fs.exists(full_track_output_file_path) or not fs.exists(stem_output_file_path):
+
             fs.makedirs(output_file_path, exist_ok=True)
             augment_pitch_and_tempo(
                 fs,

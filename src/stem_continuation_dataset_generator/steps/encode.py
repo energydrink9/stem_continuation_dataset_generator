@@ -47,7 +47,7 @@ def encode_all(source_directory: str, output_directory: str):
 
     client = cast(Client, get_client(
         RUN_LOCALLY,
-        n_workers=[1, 1],
+        n_workers=[1, 6],
         worker_vm_types=['g4dn.xlarge'],
         scheduler_vm_types=['t3.medium'],
         spot_policy='spot',

@@ -12,9 +12,9 @@ from stem_continuation_dataset_generator.cluster import get_client
 from stem_continuation_dataset_generator.constants import DEFAULT_STEM_NAME, get_merged_files_path, get_original_files_path
 from stem_continuation_dataset_generator.utils.constants import get_random_seed
 
-STEM_NAMES = ['guitar', 'drum', 'bass', 'perc', 'fx', 'vocals', 'piano', 'synth', 'winds', 'strings']
+STEM_NAMES = ['guitar', 'drum', 'bass', 'perc', 'fx', 'vocals', 'piano', 'synth', 'winds', 'strings', 'other']
 BASIC_STEM_NAMES = ['guitar', 'drum', 'bass', 'perc', 'gtr', 'drm', 'piano']
-EXCLUDE_STEMS = ['fx', 'synth', 'winds', 'strings']
+EXCLUDE_STEMS = ['fx', 'synth', 'winds', 'strings', 'vocals']
 INCLUDE_ALL_STEMS_ASSORTMENT = False
 MAX_BASIC_STEM_RANDOM_ASSORTMENTS_PER_SONG = 4
 MAX_RANDOM_FULL_ASSORTMENTS_PER_SONG = 4
@@ -39,12 +39,12 @@ class StemFile:
 
 
 def get_ogg_file_paths(fs: S3FileSystem, dir: str) -> List[str]:
-    return ['s3://' + path for path in cast(List[str], fs.glob(os.path.join(dir, '*.ogg')))]
+    return [path for path in cast(List[str], fs.glob(os.path.join(dir, '*.ogg')))]
 
 
 def get_directories_containing_ogg_files(fs: S3FileSystem, dir: str) -> FrozenSet[str]:
     ogg_files = cast(List, fs.glob(os.path.join(dir, '**/*.ogg')))
-    directories = frozenset({'s3://' + os.path.dirname(ogg_file) for ogg_file in ogg_files})
+    directories = frozenset({os.path.dirname(ogg_file) for ogg_file in ogg_files})
     return directories
 
 
@@ -192,7 +192,7 @@ def assort_directory(params: Tuple[S3FileSystem, str, str, str, str]) -> None:
     # It is possible to have multiple stems for a stem name (e.g. "vocals" and "vocals_2")
     for i, stem_assortments in enumerate(assortments):
         relative_path = os.path.relpath(directory, source_directory)
-            
+
         for j, assortment in enumerate(stem_assortments):
             song_directory = os.path.join(output_directory, relative_path + f'-inst{i}-assort{j}')
             stem, stems_to_merge = assortment
